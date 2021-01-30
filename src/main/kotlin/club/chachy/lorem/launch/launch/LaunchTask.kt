@@ -7,6 +7,7 @@ import club.chachy.lorem.utils.discoverValue
 import kotlinx.coroutines.*
 import java.io.File
 import java.util.*
+import kotlin.concurrent.thread
 
 class LaunchTask(
     private val username: String,
@@ -62,6 +63,7 @@ class LaunchTask(
             .redirectOutput(ProcessBuilder.Redirect.INHERIT)
 
         val process = withContext(Dispatchers.IO) { builder.start() }
+        Runtime.getRuntime().addShutdownHook(thread(false) { process.destroy() })
         process.waitFor()
         coroutineScope {
             File(gameDir, "natives").listFiles()?.map { async { it.delete() } }
