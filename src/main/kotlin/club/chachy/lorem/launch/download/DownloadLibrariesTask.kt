@@ -14,30 +14,37 @@ class DownloadLibrariesTask(private val runDir: File) : Task<VersionJsonProvider
     private val logger: Logger = LogManager.getLogger(this)
 
     override suspend fun execute(data: VersionJsonProvider) {
-        val libs = data.libraries
+        val libraries = data.libraries
+
         coroutineScope {
-            val l = libs.map {
+            // Download required libraries / natives
+            val downloads = libraries.map {
                 async {
-                    val path = File(File(runDir, it.takeIf { it.isNative }?.let { "natives" } ?: "libraries"), it.path)
+                    // Get the path for the file depending on if it's a native or a library
+                    val path = File(File(runDir, if (it.isNative) "natives" else "libraries"), it.path)
                     path.parentFile.mkdirs()
-                    downloadAsync(withContext(Dispatchers.IO) { URL(it.url) }, path)
+
+                    withContext(Dispatchers.IO) {
+                        URL(it.url)
+                    }.let {
+                        downloadAsync(it, path)
+                    }
                 }
             }
 
-            val time = measureNanoTime { l.awaitAll() }
+            val libraryTime = measureNanoTime { downloads.awaitAll() }
+            logger.info("Took ${libraryTime / 1000000}ms to download ${libraries.size} librar${if (libraries.size != 1) "ies" else "y"}")
 
-            logger.info("Took ${time / 1000000}ms to download ${libs.size} librar${if (libs.size != 1) "ies" else "y"}")
-
-            val natives = libs.filter { it.isNative }.map {
+            // Extract natives
+            val natives = libraries.filter { it.isNative }.map {
                 async {
-                    val path = File(File(runDir, "natives"), it.path)
-                    Extractor.unzipAsync(path.absolutePath, File(runDir, "natives").absolutePath)
+                    val nativePath = File(File(runDir, "natives"), it.path)
+                    Extractor.unzipAsync(nativePath.absolutePath, File(runDir, "natives").absolutePath)
                 }
             }
 
-            val time1 = measureNanoTime { natives.awaitAll() }
-
-            logger.info("Took ${time1 / 1000000}ms to extract ${natives.size} nativ${if (natives.size != 1) "es" else "e"}")
+            val nativesTime = measureNanoTime { natives.awaitAll() }
+            logger.info("Took ${nativesTime / 1000000}ms to extract ${natives.size} nativ${if (natives.size != 1) "es" else "e"}")
         }
     }
 }

@@ -10,11 +10,20 @@ import java.net.URL
 
 class DownloadClientTask(private val runDir: File) : Task<Pair<ClientProperty, String>, Unit> {
     override suspend fun execute(data: Pair<ClientProperty, String>) {
-        val dir = File(File(runDir, "versions"), data.second)
-        val file = File(dir, data.second + ".jar")
-        downloadAsync(withContext(Dispatchers.IO) { URL(data.first.url) }, file).await()
-        if (file.length() != data.first.size) {
-            error("Failed to successfully download client jar.")
+        val versionInfo = data.first
+        val version = data.second
+
+        val versionDir = File(File(runDir, "versions"), version)
+        val versionJar = File(versionDir, "$version.jar")
+
+        // Download the jar
+        withContext(Dispatchers.IO) {
+            URL(versionInfo.url)
+        }.let { url ->
+            downloadAsync(url, versionJar).await()
         }
+
+        // Make sure that we received the correct file
+        if (versionJar.length() != versionInfo.size) error("Failed to successfully download client jar. Expected ${versionInfo.size}. Got ${versionJar.length()}")
     }
 }

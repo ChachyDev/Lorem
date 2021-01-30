@@ -15,11 +15,11 @@ import kotlin.system.measureNanoTime
 
 private val dashesRegex = "(.{8})(.{4})(.{4})(.{4})(.{12})".toRegex()
 
-suspend fun main() {
+suspend fun main(args: Array<String>) {
     val time = measureNanoTime {
         Launcher {
-            version = "1.16.5"
-            credentials = "" to ""
+            version = "1.8.9"
+            credentials = args[args.indexOf("--username") + 1] to args[args.indexOf("--password") + 1]
         }.begin()
     }
 

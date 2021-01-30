@@ -3,10 +3,14 @@ package club.chachy.lorem.launch.download
 import club.chachy.lorem.launch.Task
 import club.chachy.lorem.launch.download.data.AssetMap
 import club.chachy.lorem.launch.manifest.VersionJsonProvider
+import club.chachy.lorem.utils.http.download
 import club.chachy.lorem.utils.http.downloadAsync
 import com.google.gson.Gson
 import com.google.gson.JsonParser
-import kotlinx.coroutines.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.withContext
 import java.io.File
 import java.net.URL
 
@@ -34,8 +38,8 @@ class DownloadAssetsTask(private val runDir: File) : Task<VersionJsonProvider, U
 
         // Download all assets
         coroutineScope {
-            assetsMap.entries.filter{
-                File(objectsFolder, it.value.shortHash).exists()
+            assetsMap.entries.filter {
+                !File(objectsFolder, it.value.shortHash).exists()
             }.map {
                 // Get asset info and hash
                 val asset = it.value
@@ -52,11 +56,9 @@ class DownloadAssetsTask(private val runDir: File) : Task<VersionJsonProvider, U
                 withContext(Dispatchers.IO) {
                     URL("https://resources.download.minecraft.net/$hash/${asset.hash}")
                 }.let { url ->
-                    async {
-                        downloadAsync(url, dest)
-                    }
+                    downloadAsync(url, dest)
                 }
-            }
-        }.awaitAll()
+            }.awaitAll()
+        }
     }
 }

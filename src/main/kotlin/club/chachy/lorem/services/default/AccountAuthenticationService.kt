@@ -105,7 +105,7 @@ class AccountAuthenticationService(private val runDir: File) : AccountAuthentica
                                 res.availableProfiles[0].name,
                                 res.availableProfiles[0].id,
                                 res.accessToken,
-                                res.user.properties,
+                                res.user.properties ?: emptyList(),
                                 res.user.username
                             )
                         )
@@ -121,7 +121,7 @@ class AccountAuthenticationService(private val runDir: File) : AccountAuthentica
                         res.availableProfiles[0].name,
                         res.availableProfiles[0].id,
                         res.accessToken,
-                        res.user.properties,
+                        res.user.properties ?: emptyList(),
                         res.user.username
                     )
                 )
@@ -134,14 +134,14 @@ class AccountAuthenticationService(private val runDir: File) : AccountAuthentica
             res.accessToken,
             res.availableProfiles[0].id,
             res.availableProfiles[0].name,
-            res.user.properties
+            res.user.properties ?: emptyList()
         )
     }
 }
 
 data class MojangAuthenticationResponse(val accessToken: String, val availableProfiles: List<Profile>, val user: User)
 
-data class User(val username: String, val properties: List<Property>)
+data class User(val username: String, val properties: List<Property>?)
 
 data class Property(val name: String, val value: String)
 
