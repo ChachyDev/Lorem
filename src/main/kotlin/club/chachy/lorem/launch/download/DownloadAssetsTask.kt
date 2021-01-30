@@ -11,33 +11,50 @@ import java.io.File
 import java.net.URL
 
 class DownloadAssetsTask(private val runDir: File) : Task<VersionJsonProvider, Unit> {
-    private val gson = Gson()
-
     override suspend fun execute(data: VersionJsonProvider) {
+        // Make necessary directories
         val assetsFolder = File(runDir, "assets")
+        val indexesFolder = File(assetsFolder, "indexes")
+        val objectsFolder = File(assetsFolder, "objects")
+        val assetsJsonFile = File(indexesFolder, data.assetsIndex.id + ".json")
+
         assetsFolder.mkdir()
-        val indexes = File(assetsFolder, "indexes")
-        indexes.mkdir()
-        val assetsJson = File(indexes, data.assetsIndex.id + ".json")
-        downloadAsync(URL(data.assetsIndex.url), assetsJson).await()
-        val assets = JsonParser.parseString(assetsJson.readText())
-        val assetsMap = gson.fromJson(gson.toJson(assets.asJsonObject["objects"]), AssetMap::class.java)
+        indexesFolder.mkdir()
+        objectsFolder.mkdir()
 
-        val objects = File(assetsFolder, "objects")
+        // Download the asset json
+        withContext(Dispatchers.IO) {
+            URL(data.assetsIndex.url)
+        }.let {
+            downloadAsync(it, assetsJsonFile).await()
+        }
 
-        objects.mkdir()
+        val assetsJson = JsonParser.parseString(assetsJsonFile.readText())
+        val assetsMap = Gson().fromJson(assetsJson.asJsonObject["objects"], AssetMap::class.java)
+
+        // Download all assets
         coroutineScope {
-            assetsMap.entries.map {
+            assetsMap.entries.filter{
+                File(objectsFolder, it.value.shortHash).exists()
+            }.map {
+                // Get asset info and hash
                 val asset = it.value
-                val hash = asset.hash.substring(0, 2)
-                val url =
-                    withContext(Dispatchers.IO) { URL("https://resources.download.minecraft.net/$hash/${asset.hash}") }
-                val assetFolder = File(objects, hash)
+                val hash = asset.shortHash
+
+                // Make the asset folder
+                val assetFolder = File(objectsFolder, hash)
                 assetFolder.mkdir()
+
+                // Prepare the destination for the asset
                 val dest = File(assetFolder, asset.hash)
-                if (dest.exists()) Unit
-                async {
-                    downloadAsync(url, dest)
+
+                // Download the asset
+                withContext(Dispatchers.IO) {
+                    URL("https://resources.download.minecraft.net/$hash/${asset.hash}")
+                }.let { url ->
+                    async {
+                        downloadAsync(url, dest)
+                    }
                 }
             }
         }.awaitAll()
