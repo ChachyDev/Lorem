@@ -1,8 +1,8 @@
 package club.chachy.lorem.launch.launch
 
+import club.chachy.auth.base.account.Property
 import club.chachy.lorem.launch.Task
 import club.chachy.lorem.launch.manifest.VersionJsonProvider
-import club.chachy.lorem.services.default.Property
 import club.chachy.lorem.utils.discoverValue
 import kotlinx.coroutines.*
 import java.io.File

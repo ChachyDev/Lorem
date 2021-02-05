@@ -1,50 +1,48 @@
 package club.chachy.lorem
 
+import club.chachy.auth.base.account.AuthType
+import club.chachy.auth.base.account.AuthenticationData
 import club.chachy.lorem.launch.download.DownloadAssetsTask
 import club.chachy.lorem.launch.download.DownloadClientTask
 import club.chachy.lorem.launch.download.DownloadLibrariesTask
 import club.chachy.lorem.launch.launch.LaunchTask
 import club.chachy.lorem.launch.manifest.ManifestTask
-import club.chachy.lorem.services.account.AuthType
-import club.chachy.lorem.services.account.AuthenticationData
 import club.chachy.lorem.services.default.AccountAuthenticationService
 import org.apache.logging.log4j.LogManager
 import java.io.File
 import java.util.*
-import kotlin.system.measureNanoTime
 
 private val dashesRegex = "(.{8})(.{4})(.{4})(.{4})(.{12})".toRegex()
 
 suspend fun main(args: Array<String>) {
-    val time = measureNanoTime {
-        Launcher {
-            version = "1.8.9"
-            credentials = args[args.indexOf("--username") + 1] to args[args.indexOf("--password") + 1]
-        }.begin()
-    }
-
-    println("Took ${time / 1000000}ms to launch Minecraft")
+    Launcher {
+        version = "1.13.2"
+        authType = AuthType.Microsoft
+        microsoftClientId = "365ddfea-60da-4095-a1a9-55802b143ac1"
+//        credentials = args[args.indexOf("--username") + 1] to args[args.indexOf("--password") + 1]
+    }.begin()
 }
 
 class Launcher(launcher: Launcher.() -> Unit) {
     private val logger = LogManager.getLogger(this)
 
+    // Config values
     var authType = AuthType.Mojang
     var version = ""
+    var microsoftClientId = "365ddfea-60da-4095-a1a9-55802b143ac1"
     var credentials = "" to ""
     var jvmArgs = arrayOf<String>()
-
+    var isSeparateMinecraftDirectoriesPerVersion = false
     var launcherName: String? = null
-
     var launcherVersion: String? = null
-
-    private var runDir = File("lorem")
 
     init {
         apply(launcher)
     }
 
-    private var authService = AccountAuthenticationService(runDir)
+    private var runDir = File(if (isSeparateMinecraftDirectoriesPerVersion) "lorem/$version" else "lorem")
+
+    private var authService = AccountAuthenticationService(runDir, microsoftClientId)
 
     suspend fun begin() {
         logger.info("Running pre-checks to check if we can launch!")

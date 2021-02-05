@@ -6,3 +6,15 @@ logs
 .idea
 lorem
 run
+/build/
+/microsoft-auth/build/
+/mojang-auth/build/
+/ms-auth-backend/build/
+/auth-base/build/
+/out/
+/microsoft-auth/out/
+/auth-base/out/
+/mojang-auth/out/
+/ms-auth-backend/out/
+/run/
+/lorem/

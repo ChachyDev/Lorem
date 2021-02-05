@@ -1,4 +1,4 @@
-package club.chachy.lorem.services.account
+package club.chachy.auth.base.account
 
 enum class AuthType {
     Mojang,

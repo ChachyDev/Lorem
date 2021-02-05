@@ -1,7 +1,7 @@
 package club.chachy.lorem.utils
 
+import club.chachy.auth.base.account.Property
 import club.chachy.lorem.Launcher.Companion.VERSION
-import club.chachy.lorem.services.default.Property
 import com.google.gson.Gson
 import java.io.File
 import java.util.*
