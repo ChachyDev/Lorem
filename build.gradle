@@ -21,6 +21,8 @@ dependencies {
     implementation project(":auth-base")
     implementation project(":microsoft-auth")
     testImplementation 'org.jetbrains.kotlin:kotlin-test-junit'
+    testImplementation project(":microsoft-auth")
+    testImplementation project(":ms-auth-backend")
 }
 
 shadowJar {

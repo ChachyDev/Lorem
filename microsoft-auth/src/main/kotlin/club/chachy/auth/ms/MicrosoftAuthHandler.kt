@@ -37,6 +37,8 @@ private val http = HttpClient(Apache) {
 private val dashesRegex = "(.{8})(.{4})(.{4})(.{4})(.{12})".toRegex()
 
 object MicrosoftAuthHandler {
+    private val serializer = defaultSerializer()
+
     val authCode = CompletableFuture<String>()
 
     suspend fun login(clientId: String): AuthData {
@@ -49,7 +51,6 @@ object MicrosoftAuthHandler {
         val link = MICROSOFT_OAUTH.format(clientId, "http://localhost:4892/auth")
 
         withContext(Dispatchers.IO) { Desktop.getDesktop().browse(URI(link)) }
-
 
         val code = authCode.await()
 
@@ -67,7 +68,7 @@ object MicrosoftAuthHandler {
         )
 
         val xblRequest = http.post<XboxLiveAuthResponse>("https://user.auth.xboxlive.com/user/authenticate") {
-            body = defaultSerializer().write(req)
+            body = serializer.write(req)
         }
 
         // Fleep microsoft dude why do they use caps
@@ -77,7 +78,7 @@ object MicrosoftAuthHandler {
         val uhs = xblRequest.DisplayClaims.xui.find { it.has("uhs") }?.get("uhs")?.asString ?: error("No uhs found...")
 
         val xstsRequest = http.post<XboxLiveAuthResponse>("https://xsts.auth.xboxlive.com/xsts/authorize") {
-            body = defaultSerializer().write(
+            body = serializer.write(
                 XSTSAuthRequestBody(
                     XSTSProperties(
                         "RETAIL",
@@ -89,11 +90,15 @@ object MicrosoftAuthHandler {
             )
         }
 
-        val mcAccessToken = http.post<LoginWithXboxResponse>("https://api.minecraftservices.com/authentication/login_with_xbox") {
-            body = defaultSerializer().write(LoginWithXboxRequest("XBL3.0 x=%s;%s".format(uhs, xstsRequest.Token)))
-        }.accessToken
+        val mcAccessResponse =
+            http.post<LoginWithXboxResponse>("https://api.minecraftservices.com/authentication/login_with_xbox") {
+                body = serializer.write(LoginWithXboxRequest("XBL3.0 x=%s;%s".format(uhs, xstsRequest.Token)))
+            }
+
 
         // Finally!!!! now lets check if they have the game
+
+        val mcAccessToken = mcAccessResponse.accessToken
 
         val isGameOwned = http.get<MCStoreResponse>("https://api.minecraftservices.com/entitlements/mcstore") {
             header("Authorization", "Bearer $mcAccessToken")
@@ -105,7 +110,8 @@ object MicrosoftAuthHandler {
             header("Authorization", "Bearer $mcAccessToken")
         }
 
-        return AuthData(mcAccessToken, profile.id, profile.name, listOf())
+        return AuthData(mcAccessToken, profile.id, profile.name, mcAccessResponse.expiresIn, listOf())
+        // The End.
     }
 }
 
@@ -136,14 +142,20 @@ data class XSTSAuthRequestBody(
     @SerializedName("TokenType") val tokenType: String
 )
 
-data class XSTSProperties(@SerializedName("SandboxId") val sandboxId: String, @SerializedName("UserTokens") val userTokens: List<String>)
+data class XSTSProperties(
+    @SerializedName("SandboxId") val sandboxId: String,
+    @SerializedName("UserTokens") val userTokens: List<String>
+)
 
 data class LoginWithXboxRequest(val identityToken: String)
 
-data class LoginWithXboxResponse(@SerializedName("access_token") val accessToken: String)
+data class LoginWithXboxResponse(@SerializedName("access_token") val accessToken: String, @SerializedName("expires_in") val expiresIn: Long)
 
 data class MCStoreResponse(val items: List<Product>)
 
-data class Product(val name: String, val signature: String) // In a real world situation we don't actually care about these
+data class Product(
+    val name: String,
+    val signature: String
+) // In a real world situation we don't actually care about these
 
-data class MCProfileResponse(val id: String, val name: String, )
+data class MCProfileResponse(val id: String, val name: String)

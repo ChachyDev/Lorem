@@ -17,9 +17,8 @@ private val dashesRegex = "(.{8})(.{4})(.{4})(.{4})(.{12})".toRegex()
 suspend fun main(args: Array<String>) {
     Launcher {
         version = "1.13.2"
-        authType = AuthType.Microsoft
-        microsoftClientId = "365ddfea-60da-4095-a1a9-55802b143ac1"
-//        credentials = args[args.indexOf("--username") + 1] to args[args.indexOf("--password") + 1]
+//        authType = AuthType.Microsoft
+        credentials = args[args.indexOf("--username") + 1] to args[args.indexOf("--password") + 1]
     }.begin()
 }
 

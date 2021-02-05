@@ -18,3 +18,7 @@ run
 /ms-auth-backend/out/
 /run/
 /lorem/
+/launcher-gui/out/
+/launcher-gui/build/
+/launcher-cli/out/
+/launcher-cli/build/

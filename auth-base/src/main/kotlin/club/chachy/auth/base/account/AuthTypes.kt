@@ -6,7 +6,9 @@ import java.io.File
  * Compat layer
  */
 
-data class AuthData(val token: String, val uuid: String, val username: String, val props: List<Property>)
+data class AuthData(val token: String, val uuid: String, val username: String, val expiresOn: Long, val props: List<Property>) {
+    constructor(account: club.chachy.auth.base.account.storage.Account) : this(account.token, account.uuid, account.username, account.expiresIn, account.properties)
+}
 
 data class User(val username: String, val properties: List<Property>?)
 
