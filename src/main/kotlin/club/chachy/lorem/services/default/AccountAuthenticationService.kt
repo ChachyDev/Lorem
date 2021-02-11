@@ -6,7 +6,6 @@ import club.chachy.auth.base.account.AuthenticationData
 import club.chachy.auth.mojang.MojangAuthHandler
 import club.chachy.auth.ms.MicrosoftAuthHandler
 import club.chachy.lorem.services.Service
-import club.chachy.lorem.toUUID
 import java.io.File
 
 class AccountAuthenticationService(private val runDir: File, private val clientId: String?) : Service<AuthenticationData, AuthData> {

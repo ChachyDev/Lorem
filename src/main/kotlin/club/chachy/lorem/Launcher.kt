@@ -26,6 +26,7 @@ class Launcher(launcher: Launcher.() -> Unit) {
     var isSeparateMinecraftDirectoriesPerVersion = false
     var launcherName: String? = null
     var launcherVersion: String? = null
+    var closeHandlers: List<() -> Unit> = emptyList()
 
     init {
         apply(launcher)
@@ -66,7 +67,8 @@ class Launcher(launcher: Launcher.() -> Unit) {
             props = authData.props,
             nativesDirectory = File(runDir, "natives"),
             launcherName = launcherName ?: "Lorem",
-            launcherVersion = launcherVersion ?: VERSION
+            launcherVersion = launcherVersion ?: VERSION,
+            closeHandlers = closeHandlers
         ).execute(manifest)
     }
 

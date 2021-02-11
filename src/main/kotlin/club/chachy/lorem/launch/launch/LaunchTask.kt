@@ -30,7 +30,9 @@ class LaunchTask(
 
     private val launcherName: String,
 
-    private val launcherVersion: String
+    private val launcherVersion: String,
+
+    private val closeHandlers: List<() -> Unit>
 ) : Task<VersionJsonProvider, Unit> {
     @Suppress("BlockingMethodInNonBlockingContext")
     override suspend fun execute(data: VersionJsonProvider) {
@@ -68,6 +70,7 @@ class LaunchTask(
         coroutineScope {
             File(gameDir, "natives").listFiles()?.map { async { it.delete() } }
         }?.awaitAll()
+        closeHandlers.forEach { it.invoke() }
     }
 }
 

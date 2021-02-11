@@ -13,5 +13,7 @@ repositories {
 
 dependencies {
     implementation 'com.github.ChachyDev:SimpleConfig:164fdc366e'
+    implementation project(":")
+    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.4.2'
     implementation "org.jetbrains.kotlin:kotlin-stdlib"
 }
