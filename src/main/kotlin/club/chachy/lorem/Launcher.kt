@@ -17,8 +17,8 @@ private val dashesRegex = "(.{8})(.{4})(.{4})(.{4})(.{12})".toRegex()
 suspend fun main(args: Array<String>) {
     Launcher {
         version = "1.13.2"
-//        authType = AuthType.Microsoft
-        credentials = args[args.indexOf("--username") + 1] to args[args.indexOf("--password") + 1]
+        authType = AuthType.Microsoft
+        username = "oldchahcyboy"
     }.begin()
 }
 
@@ -29,7 +29,8 @@ class Launcher(launcher: Launcher.() -> Unit) {
     var authType = AuthType.Mojang
     var version = ""
     var microsoftClientId = "365ddfea-60da-4095-a1a9-55802b143ac1"
-    var credentials = "" to ""
+    var username: String = ""
+    var password: String? = null
     var jvmArgs = arrayOf<String>()
     var isSeparateMinecraftDirectoriesPerVersion = false
     var launcherName: String? = null
@@ -45,19 +46,14 @@ class Launcher(launcher: Launcher.() -> Unit) {
 
     suspend fun begin() {
         logger.info("Running pre-checks to check if we can launch!")
-
-        val builder = buildString {
-            if (version.isEmpty()) append("\nPlease enter a Minecraft Version to launch!")
-            if (credentials.first.isEmpty() && credentials.second.isEmpty() && authType != AuthType.Microsoft) append("\nPlease enter your credentials to launch!")
-        }
-        if (builder.isNotEmpty()) error(builder)
+        if (authType == AuthType.Mojang && password?.isEmpty() == true || authType == AuthType.Mojang && username.isEmpty()) error("Please specifiy a username and password")
 
         logger.info("Preparing for launch")
         runDir.mkdir()
 
         logger.info("Logging in!")
         val authData =
-            authService.executeTask(AuthenticationData(credentials.first, credentials.second, authType, runDir))
+            authService.executeTask(AuthenticationData(username, password, authType, runDir))
         logger.info("Nice you got your password correct! Username: ${authData.username}, UUID: ${authData.uuid}")
         logger.info("Preparing Game files...")
         logger.info("Fetching manifest...")

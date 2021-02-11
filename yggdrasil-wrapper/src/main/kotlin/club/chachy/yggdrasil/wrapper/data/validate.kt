@@ -1,3 +1,3 @@
-package club.chachy.auth.mojang.wrapper.data
+package club.chachy.yggdrasil.wrapper.data
 
 data class YggdrasilValidationInvalidationRequest(val accessToken: String)

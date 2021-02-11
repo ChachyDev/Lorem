@@ -5,3 +5,5 @@ include 'microsoft-auth'
 include 'ms-auth-backend'
 include 'launcher-gui'
 include 'launcher-cli'
+include 'yggdrasil-wrapper'
+

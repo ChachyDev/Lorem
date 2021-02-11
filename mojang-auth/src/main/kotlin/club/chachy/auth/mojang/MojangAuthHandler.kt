@@ -1,14 +1,11 @@
 package club.chachy.auth.mojang
 
-import club.chachy.auth.base.account.AccountJson
 import club.chachy.auth.base.account.AuthData
-import club.chachy.auth.base.account.Profile
-import club.chachy.auth.base.account.User
 import club.chachy.auth.base.account.storage.Account
 import club.chachy.auth.base.account.storage.Accounts
-import club.chachy.auth.mojang.utils.createDataClass
-import club.chachy.auth.mojang.utils.gson
-import club.chachy.auth.mojang.wrapper.YggdrasilAPIWrapper
+import club.chachy.auth.base.account.utils.attemptReading
+import club.chachy.auth.base.account.utils.gson
+import club.chachy.yggdrasil.wrapper.YggdrasilAPIWrapper
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.apache.logging.log4j.LogManager
@@ -62,15 +59,5 @@ object MojangAuthHandler {
         return AuthData(acc)
     }
 
-    private fun attemptReading(content: String, username: String?): Pair<Accounts, Account?> {
-        val accounts = createDataClass<Accounts>(content)
-        if (accounts.accounts.size > 1 && username != null) return accounts to null
-
-        return accounts to if (accounts.accounts.size == 1) accounts.accounts[0] else accounts.accounts.find { it.username == username }
-    }
-
     private fun saveFile(accountJson: File, accounts: Accounts) = accountJson.writeText(gson.toJson(accounts))
 }
-
-data class MojangAuthenticationResponse(val accessToken: String, val availableProfiles: List<Profile>, val user: User)
-

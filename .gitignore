@@ -22,3 +22,5 @@ run
 /launcher-gui/build/
 /launcher-cli/out/
 /launcher-cli/build/
+/yggdrasil-wrapper/out/
+/yggdrasil-wrapper/build/

@@ -1,10 +1,13 @@
 package club.chachy.auth.ms
 
 import club.chachy.auth.base.account.AuthData
+import club.chachy.auth.base.account.storage.Account
+import club.chachy.auth.base.account.storage.Accounts
+import club.chachy.auth.base.account.utils.attemptReading
+import club.chachy.auth.ms.data.*
 import club.chachy.auth.ms.microsoft.CodeHandler
+import club.chachy.yggdrasil.wrapper.YggdrasilAPIWrapper
 import com.google.gson.Gson
-import com.google.gson.JsonObject
-import com.google.gson.annotations.SerializedName
 import com.sun.net.httpserver.HttpServer
 import io.ktor.client.*
 import io.ktor.client.engine.apache.*
@@ -14,6 +17,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.withContext
 import java.awt.Desktop
+import java.io.File
 import java.net.InetSocketAddress
 import java.net.URI
 import java.util.concurrent.CompletableFuture
@@ -34,15 +38,39 @@ private val http = HttpClient(Apache) {
     }
 }
 
-private val dashesRegex = "(.{8})(.{4})(.{4})(.{4})(.{12})".toRegex()
-
 object MicrosoftAuthHandler {
     private val serializer = defaultSerializer()
 
     val authCode = CompletableFuture<String>()
 
-    suspend fun login(clientId: String): AuthData {
+    suspend fun login(runDir: File, clientId: String, username: String?): AuthData {
         // The beginning of pain
+        val accountsDir = File(runDir, "storage/accounts")
+        val accountsJson = File(accountsDir, "accounts.json")
+        accountsDir.mkdirs()
+        withContext(Dispatchers.IO) { accountsJson.createNewFile() }
+
+        val text = if (accountsJson.exists()) accountsJson.readText() else null
+
+        val account: Accounts
+
+        if (!text.isNullOrEmpty()) {
+            println("Attempting to log in from saved session")
+            val attemptedRead = attemptReading(text, username)
+            account = attemptedRead.first
+            val acc = account.accounts.find { it.username == username || it.uuid == username }
+            if (acc != null) {
+                // Quickly validate the token
+                val isValid = YggdrasilAPIWrapper.validate(acc.token)
+                if (isValid) {
+                    return AuthData(acc)
+                }
+                account.accounts.removeIf { it.username == acc.token }
+            }
+        } else {
+            account = Accounts(ArrayList())
+        }
+
         val server = withContext(Dispatchers.IO) { HttpServer.create(InetSocketAddress(4892), 0) }
         server.createContext("/auth", CodeHandler)
         server.executor = null
@@ -110,52 +138,17 @@ object MicrosoftAuthHandler {
             header("Authorization", "Bearer $mcAccessToken")
         }
 
-        return AuthData(mcAccessToken, profile.id, profile.name, mcAccessResponse.expiresIn, listOf())
-        // The End.
+        val authData = AuthData(mcAccessToken, profile.id, profile.name, mcAccessResponse.expiresIn, listOf())
+
+        val acc = Account(profile.name, profile.id, mcAccessToken, mcAccessResponse.expiresIn, listOf())
+
+        account.accounts.removeIf { it.uuid == profile.id }
+        account.accounts.add(acc)
+
+        accountsJson.saveFile(account)
+
+        return authData
     }
+
+    private fun File.saveFile(accounts: Accounts) = writeText(gson.toJson(accounts))
 }
-
-data class MicrosoftAuthResponse(@SerializedName("access_token") val accessToken: String)
-
-data class XboxLiveAuthRequestBody(
-    val Properties: Properties,
-    val RelyingParty: String,
-    val TokenType: String
-)
-
-data class Properties(
-    val AuthMethod: String,
-    val SiteName: String,
-    val RpsTicket: String
-)
-
-data class XboxLiveAuthResponse(
-    val Token: String,
-    val DisplayClaims: DisplayClaims
-)
-
-data class DisplayClaims(val xui: List<JsonObject>)
-
-data class XSTSAuthRequestBody(
-    @SerializedName("Properties") val properties: XSTSProperties,
-    @SerializedName("RelyingParty") val relyingParty: String,
-    @SerializedName("TokenType") val tokenType: String
-)
-
-data class XSTSProperties(
-    @SerializedName("SandboxId") val sandboxId: String,
-    @SerializedName("UserTokens") val userTokens: List<String>
-)
-
-data class LoginWithXboxRequest(val identityToken: String)
-
-data class LoginWithXboxResponse(@SerializedName("access_token") val accessToken: String, @SerializedName("expires_in") val expiresIn: Long)
-
-data class MCStoreResponse(val items: List<Product>)
-
-data class Product(
-    val name: String,
-    val signature: String
-) // In a real world situation we don't actually care about these
-
-data class MCProfileResponse(val id: String, val name: String)

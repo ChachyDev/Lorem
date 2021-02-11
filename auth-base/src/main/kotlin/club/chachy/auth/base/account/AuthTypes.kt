@@ -26,4 +26,4 @@ data class Account(
 
 data class AccountJson(val accounts: List<Account>)
 
-data class AuthenticationData(val username: String, val password: String, val type: AuthType, val launchDir: File)
+data class AuthenticationData(val username: String, val password: String?, val type: AuthType, val launchDir: File)
