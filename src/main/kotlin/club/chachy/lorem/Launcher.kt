@@ -8,19 +8,10 @@ import club.chachy.lorem.launch.download.DownloadLibrariesTask
 import club.chachy.lorem.launch.launch.LaunchTask
 import club.chachy.lorem.launch.manifest.ManifestTask
 import club.chachy.lorem.services.default.AccountAuthenticationService
+import club.chachy.lorem.utils.toUUID
 import org.apache.logging.log4j.LogManager
 import java.io.File
 import java.util.*
-
-private val dashesRegex = "(.{8})(.{4})(.{4})(.{4})(.{12})".toRegex()
-
-suspend fun main(args: Array<String>) {
-    Launcher {
-        version = "1.13.2"
-        authType = AuthType.Microsoft
-        username = "oldchahcyboy"
-    }.begin()
-}
 
 class Launcher(launcher: Launcher.() -> Unit) {
     private val logger = LogManager.getLogger(this)
@@ -84,4 +75,3 @@ class Launcher(launcher: Launcher.() -> Unit) {
     }
 }
 
-fun String.toUUID(): UUID = UUID.fromString(replace(dashesRegex, "\$1-\$2-\$3-\$4-\$5"))

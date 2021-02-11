@@ -1,7 +1,6 @@
 package club.chachy.lorem.utils
 
 import club.chachy.auth.base.account.Property
-import club.chachy.lorem.Launcher.Companion.VERSION
 import com.google.gson.Gson
 import java.io.File
 import java.util.*
@@ -40,3 +39,7 @@ fun String.discoverValue(
         .replacePlaceholder("version_type", versionType)
         .replacePlaceholder("launcher_version", launcherVersion)
 }
+
+private val dashesRegex = "(.{8})(.{4})(.{4})(.{4})(.{12})".toRegex()
+
+fun String.toUUID(): UUID = UUID.fromString(replace(dashesRegex, "\$1-\$2-\$3-\$4-\$5"))
