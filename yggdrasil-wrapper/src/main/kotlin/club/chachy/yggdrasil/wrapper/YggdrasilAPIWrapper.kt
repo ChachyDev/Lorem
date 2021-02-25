@@ -16,8 +16,6 @@ import java.util.*
 object YggdrasilAPIWrapper {
     private const val MOJANG_SERVERS = "https://authserver.mojang.com"
 
-    private val randomClientToken = UUID.randomUUID()
-
     private val http = HttpClient(Apache) {
         Json {
             serializer = GsonSerializer()
@@ -61,15 +59,17 @@ object YggdrasilAPIWrapper {
     }
 
     suspend fun validate(accessToken: String) =
-        http.post<HttpResponse>("$MOJANG_SERVERS/validate") {
-            body = serializer.write(YggdrasilValidationInvalidationRequest(accessToken))
-        }.status == HttpStatusCode.NoContent
+        runCatching {
+            http.post<HttpResponse>("$MOJANG_SERVERS/validate") {
+                body = serializer.write(YggdrasilValidationInvalidationRequest(accessToken))
+            }.status == HttpStatusCode.NoContent
+        }.getOrNull() ?: false
 
     suspend fun signout(username: String, password: String) = http.post<String>("$MOJANG_SERVERS/signout") {
         body = serializer.write(YggdrasilSignoutRequest(username, password))
     }.isEmpty()
 
-    suspend fun invalidate(accessToken: String, clientToken: UUID = randomClientToken) =
+    suspend fun invalidate(accessToken: String) =
         http.post<String>("$MOJANG_SERVERS/invalidate") {
             body = serializer.write(YggdrasilValidationInvalidationRequest(accessToken))
         }.isEmpty()

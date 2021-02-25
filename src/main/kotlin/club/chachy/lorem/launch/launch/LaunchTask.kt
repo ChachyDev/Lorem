@@ -4,7 +4,10 @@ import club.chachy.auth.base.account.Property
 import club.chachy.lorem.launch.Task
 import club.chachy.lorem.launch.manifest.VersionJsonProvider
 import club.chachy.lorem.utils.discoverValue
-import kotlinx.coroutines.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.withContext
 import java.io.File
 import java.util.*
 import kotlin.concurrent.thread
@@ -67,9 +70,7 @@ class LaunchTask(
         val process = withContext(Dispatchers.IO) { builder.start() }
         Runtime.getRuntime().addShutdownHook(thread(false) { process.destroy() })
         process.waitFor()
-        coroutineScope {
-            File(gameDir, "natives").listFiles()?.map { async { it.delete() } }
-        }?.awaitAll()
+        coroutineScope { async { File(gameDir, "natives") } }.await()
         closeHandlers.forEach { it.invoke() }
     }
 }

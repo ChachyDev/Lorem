@@ -1,5 +1,10 @@
 package club.chachy.lorem.launch.manifest
 
+import club.chachy.auth.base.account.utils.gson
+import club.chachy.lorem.resolvers.fabric.FabricResolver
+import club.chachy.lorem.resolvers.forge.ForgeResolver
+import club.chachy.lorem.resolvers.resolvers
+import club.chachy.lorem.utils.getOrNull
 import club.chachy.lorem.utils.toBoolean
 import com.google.gson.JsonArray
 import com.google.gson.JsonObject
@@ -46,57 +51,21 @@ class DefaultVersionJsonProvider(
             if (minimumLauncherVersion <= 18) {
                 val libraries = obj["libraries"].asJsonArray
                 libraries.forEach {
-                    val download = it.asJsonObject["downloads"].asJsonObject
-                    val artifact = if (download.has("artifact")) download["artifact"].asJsonObject else null
-                    val rule = if (download.has("rules")) download["rules"].asJsonArray.toBoolean() else true
-                    if (download.has("classifiers")) {
-                        val classifiers = download["classifiers"].asJsonObject
-                        val native = with(System.getProperty("os.name")) {
-                            when {
-                                startsWith(
-                                    "Windows",
-                                    true
-                                ) -> if (!classifiers.has("natives-windows")) classifiers["natives-windows-$arch"] else classifiers["natives-windows"]
-                                startsWith("Mac", true) || startsWith("Darwin", true) -> classifiers["natives-osx"]
-                                else -> classifiers["natives-linux"]
-                            }.asJsonObject
+                    val obj = it.asJsonObject
+                    if (!obj.has("downloads")) {
+                        // Probs fabric gotta double check tho
+                        val lib =
+                            resolvers[id.substringAfter('-')]?.resolveLibrary(obj) ?: ForgeResolver.resolveLibrary(obj)
+                        if (lib.path != "no_resolver") {
+                            libs.add(lib)
                         }
-
-                        libs.add(
-                            Library(
-                                native["path"].asString,
-                                native["sha1"].asString,
-                                native["size"].asLong,
-                                native["url"].asString,
-                                isAllowed = true,
-                                isNative = true
-                            )
-                        )
-                    }
-
-                    if (artifact != null) {
-                        libs.add(
-                            Library(
-                                artifact["path"].asString,
-                                artifact["sha1"].asString,
-                                artifact["size"].asLong,
-                                artifact["url"].asString,
-                                rule,
-                                false
-                            )
-                        )
-                    }
-                }
-            } else {
-                val libraries = obj["libraries"].asJsonArray
-                libraries.forEach {
-                    val download = it.asJsonObject["downloads"].asJsonObject
-                    val artifact = download["artifact"].asJsonObject
-                    val rule = if (download.has("rules")) download["rules"].asJsonArray.toBoolean() else true
-                    if (download.has("classifiers")) {
-                        val classifiers = download["classifiers"].asJsonObject
-                        val native = runCatching {
-                            with(System.getProperty("os.name")) {
+                    } else {
+                        val download = it.asJsonObject["downloads"].asJsonObject
+                        val artifact = if (download.has("artifact")) download["artifact"].asJsonObject else null
+                        val rule = if (download.has("rules")) download["rules"].asJsonArray.toBoolean() else true
+                        if (download.has("classifiers")) {
+                            val classifiers = download["classifiers"].asJsonObject
+                            val native = with(System.getProperty("os.name")) {
                                 when {
                                     startsWith(
                                         "Windows",
@@ -106,9 +75,7 @@ class DefaultVersionJsonProvider(
                                     else -> classifiers["natives-linux"]
                                 }.asJsonObject
                             }
-                        }.getOrNull()
 
-                        if (native != null) {
                             libs.add(
                                 Library(
                                     native["path"].asString,
@@ -120,17 +87,76 @@ class DefaultVersionJsonProvider(
                                 )
                             )
                         }
+
+                        if (artifact != null) {
+                            libs.add(
+                                Library(
+                                    artifact["path"].asString,
+                                    artifact["sha1"].asString,
+                                    artifact["size"].asLong,
+                                    artifact["url"].asString,
+                                    rule,
+                                    false
+                                )
+                            )
+                        }
                     }
-                    libs.add(
-                        Library(
-                            artifact["path"].asString,
-                            artifact["sha1"].asString,
-                            artifact["size"].asLong,
-                            artifact["url"].asString,
-                            rule,
-                            false
+                }
+            } else {
+                val libraries = obj["libraries"].asJsonArray
+                libraries.forEach {
+                    val o = it.asJsonObject
+                    if (o.has("name") && !o.has("downloads")) {
+                        // Probs fabric gotta double check tho
+                        libs.add(
+                            resolvers[id.substringAfter('-')]?.resolveLibrary(obj) ?: FabricResolver.resolveLibrary(obj)
                         )
-                    )
+                    } else {
+                        val download = it.asJsonObject["downloads"].asJsonObject
+                        val artifact = download["artifact"].asJsonObject
+                        val rule = if (download.has("rules")) download["rules"].asJsonArray.toBoolean() else true
+                        if (download.has("classifiers")) {
+                            val classifiers = download["classifiers"].asJsonObject
+                            val native = runCatching {
+                                with(System.getProperty("os.name")) {
+                                    when {
+                                        startsWith(
+                                            "Windows",
+                                            true
+                                        ) -> if (!classifiers.has("natives-windows")) classifiers["natives-windows-$arch"] else classifiers["natives-windows"]
+                                        startsWith("Mac", true) || startsWith(
+                                            "Darwin",
+                                            true
+                                        ) -> classifiers["natives-osx"]
+                                        else -> classifiers["natives-linux"]
+                                    }.asJsonObject
+                                }
+                            }.getOrNull()
+
+                            if (native != null) {
+                                libs.add(
+                                    Library(
+                                        native["path"].asString,
+                                        native["sha1"].asString,
+                                        native["size"].asLong,
+                                        native["url"].asString,
+                                        isAllowed = true,
+                                        isNative = true
+                                    )
+                                )
+                            }
+                        }
+                        libs.add(
+                            Library(
+                                artifact["path"].asString,
+                                artifact["sha1"].asString,
+                                artifact["size"].asLong,
+                                artifact["url"].asString,
+                                rule,
+                                false
+                            )
+                        )
+                    }
                 }
             }
             return libs
@@ -161,11 +187,13 @@ class DefaultVersionJsonProvider(
 
             val libs = mutableListOf<String>()
 
+            val jar = obj.getOrNull("jar")?.asString ?: id
+
             libs.addAll(
                 libraries
                     .mapNotNull { if (!it.isNative) File(File(runDir, "libraries"), it.path) else null }
                     .toMutableList()
-                    .apply { add(0, File(File(File(runDir, "versions"), id), "$id.jar")) }
+                    .apply { add(0, File(File(File(runDir, "versions"), jar), "$jar.jar")) }
                     .map { it.absolutePath }
             )
 
@@ -190,7 +218,7 @@ class DefaultVersionJsonProvider(
                 val gameArgument = mainArguments["game"].asJsonArray
                 val jvmArguments = mainArguments["jvm"].asJsonArray
                 gameArgument.forEach {
-                    when(it) {
+                    when (it) {
                         is JsonPrimitive -> {
                             // This is a string arg lets go baby!
                             mcArgs.add(it.asString)
@@ -198,7 +226,7 @@ class DefaultVersionJsonProvider(
 
                         is JsonObject -> {
                             val value = it.asJsonObject["value"].let { v ->
-                                when(v) {
+                                when (v) {
                                     is JsonArray -> v.asJsonArray.map { a -> a.asString }.toTypedArray()
                                     is JsonPrimitive -> arrayOf(v.asString)
                                     else -> error("Something went wrong...")
@@ -216,7 +244,7 @@ class DefaultVersionJsonProvider(
                 }
 
                 jvmArguments.forEach {
-                    when(it) {
+                    when (it) {
                         is JsonPrimitive -> {
                             // Good!
                             jvmArgs.add(it.asString)
@@ -227,7 +255,7 @@ class DefaultVersionJsonProvider(
                             val rule = it.asJsonObject["rules"].asJsonArray.toBoolean()
                             if (rule) {
                                 val value = it.asJsonObject["value"].let { v ->
-                                    when(v) {
+                                    when (v) {
                                         is JsonArray -> v.asJsonArray.map { a -> a.asString }.toTypedArray()
                                         is JsonPrimitive -> arrayOf(v.asString)
                                         else -> error("Something went wrong...")
@@ -251,5 +279,4 @@ class DefaultVersionJsonProvider(
             return list.toTypedArray()
         }
     override val type: String = obj["type"].asString
-
 }
