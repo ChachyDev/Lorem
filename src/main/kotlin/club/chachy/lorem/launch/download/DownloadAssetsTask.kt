@@ -3,8 +3,7 @@ package club.chachy.lorem.launch.download
 import club.chachy.lorem.launch.Task
 import club.chachy.lorem.launch.download.data.AssetMap
 import club.chachy.lorem.launch.manifest.VersionJsonProvider
-import club.chachy.lorem.utils.http.download
-import club.chachy.lorem.utils.http.downloadAsync
+import club.chachy.lorem.utils.downloadAsync
 import com.google.gson.Gson
 import com.google.gson.JsonParser
 import kotlinx.coroutines.Dispatchers

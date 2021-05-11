@@ -1,22 +1,8 @@
 # Project exclude paths
 /.gradle/
-/build/
-/out/
 /logs/
 /.idea/
-/microsoft-auth/build/
-/mojang-auth/build/
-/ms-auth-backend/build/
-/auth-base/build/
-/microsoft-auth/out/
-/auth-base/out/
-/mojang-auth/out/
-/ms-auth-backend/out/
 /run/
 /lorem/
-/launcher-gui/out/
-/launcher-gui/build/
-/launcher-cli/out/
-/launcher-cli/build/
-/yggdrasil-wrapper/out/
-/yggdrasil-wrapper/build/
+out/
+build/

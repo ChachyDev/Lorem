@@ -2,8 +2,8 @@ package club.chachy.lorem.launch.manifest
 
 import club.chachy.lorem.launch.Task
 import club.chachy.lorem.launch.manifest.data.MojangManifestResponse
-import club.chachy.lorem.utils.http.downloadAsync
-import club.chachy.lorem.utils.http.http
+import club.chachy.lorem.utils.downloadAsync
+import club.chachy.lorem.utils.http
 import com.google.gson.JsonParser
 import io.ktor.client.request.*
 import kotlinx.coroutines.Dispatchers
@@ -16,7 +16,8 @@ import kotlin.system.measureNanoTime
 
 const val MANIFEST_URL = "https://launchermeta.mojang.com/mc/game/version_manifest.json"
 
-class ManifestTask(private val runDir: File, private val jvmArgs: MutableList<String>) : Task<String, VersionJsonProvider> {
+class ManifestTask(private val runDir: File, private val jvmArgs: MutableList<String>) :
+    Task<String, VersionJsonProvider> {
     private val logger: Logger = LogManager.getLogger(this)
 
     override suspend fun execute(data: String): VersionJsonProvider {

@@ -1,54 +1,76 @@
 plugins {
-    id 'org.jetbrains.kotlin.jvm' version '1.4.21'
-    id "com.github.johnrengelman.shadow" version "6.1.0"
+    id 'org.jetbrains.kotlin.jvm' version '1.5.0' apply false
 }
 
 group = 'club.chachy'
 version = '1.0-SNAPSHOT'
 
-repositories {
-    mavenCentral()
+allprojects {
+    apply plugin: "maven-publish"
+    apply plugin: "org.jetbrains.kotlin.jvm"
+
+    repositories {
+        mavenCentral()
+    }
+
+    publishing {
+        repositories {
+            maven {
+                url = "$buildDir/repository"
+            }
+        }
+
+        publications {
+            //noinspection GroovyAssignabilityCheck
+            mavenJava(MavenPublication) {
+                from components.java
+                pom {
+                    name = 'Lorem'
+                    url = 'https://github.com/ChachyDev/Lorem'
+
+                    developers {
+                        developer {
+                            id = 'lorem'
+                            name = 'ChachyDev'
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
 
 dependencies {
     implementation 'org.apache.logging.log4j:log4j-api:2.14.0'
     implementation 'org.apache.logging.log4j:log4j-core:2.14.0'
-    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
-    implementation "io.ktor:ktor-client-gson:1.5.1"
-    implementation "io.ktor:ktor-client-core:1.5.1"
-    implementation "io.ktor:ktor-client-apache:1.5.1"
-    implementation project(":mojang-auth")
-    implementation project(":auth-base")
-    implementation project(":microsoft-auth")
-    testImplementation 'org.jetbrains.kotlin:kotlin-test-junit'
-    testImplementation project(":microsoft-auth")
-    testImplementation project(":ms-auth-backend")
-}
 
-shadowJar {
-    manifest.attributes(
-            "Main-Class": "club.chachy.lorem.LauncherKt"
-    )
-}
-test {
-    useJUnit()
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
+
+    implementation "io.ktor:ktor-client-gson:1.5.4"
+    implementation "io.ktor:ktor-client-core:1.5.4"
+    implementation "io.ktor:ktor-client-apache:1.5.4"
+
+    implementation project(":lib:authentication:mojang-auth")
+    implementation project(":lib:authentication:microsoft-auth")
+
+    implementation project(":lib:api:service")
 }
 
 compileKotlin {
-    kotlinOptions.jvmTarget = '1.8'
+    kotlinOptions.jvmTarget = 1.8
 }
 
 compileTestKotlin {
-    kotlinOptions.jvmTarget = '1.8'
+    kotlinOptions.jvmTarget = 1.8
 }
 
 task sourcesJar(type: Jar, dependsOn: classes) {
-    classifier = 'sources'
+    archiveClassifier.set('sources')
     from sourceSets.main.allSource
 }
 
 task javadocJar(type: Jar, dependsOn: javadoc) {
-    classifier = 'javadoc'
+    archiveClassifier.set('javadoc')
     from javadoc.destinationDir
 }
 

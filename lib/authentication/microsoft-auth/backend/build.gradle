@@ -1,0 +1,24 @@
+plugins {
+    id 'org.jetbrains.kotlin.jvm'
+    id "com.github.johnrengelman.shadow" version "7.0.0"
+}
+
+group 'club.chachy'
+version '1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation "org.jetbrains.kotlin:kotlin-stdlib"
+    implementation "io.ktor:ktor-client-gson:1.5.4"
+    implementation "io.ktor:ktor-client-core:1.5.4"
+    implementation "io.ktor:ktor-client-apache:1.5.4"
+}
+
+shadowJar {
+    manifest.attributes(
+        "Main-Class": "club.chachy.auth.ms.server.MainKt"
+    )
+}

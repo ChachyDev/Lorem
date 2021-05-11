@@ -1,0 +1,16 @@
+group 'club.chachy'
+version '1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation "org.jetbrains.kotlin:kotlin-stdlib"
+    implementation "io.ktor:ktor-client-gson:1.5.4"
+    implementation "io.ktor:ktor-client-core:1.5.4"
+    implementation "io.ktor:ktor-client-apache:1.5.4"
+    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:1.5.0-RC'
+    implementation project(":lib:api:yggdrasil")
+    api project(":lib:authentication:base")
+}

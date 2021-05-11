@@ -29,8 +29,8 @@ data class ClientProperty(val sha1: String, val size: Long, val url: String)
 data class Library(
     val path: String,
     val sha1: String,
-    val size: Long,
-    val url: String,
+    val size: Long = 0,
+    val url: String?,
     val isAllowed: Boolean,
     val isNative: Boolean,
 )

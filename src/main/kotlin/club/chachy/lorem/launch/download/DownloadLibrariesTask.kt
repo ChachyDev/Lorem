@@ -2,7 +2,7 @@ package club.chachy.lorem.launch.download
 
 import club.chachy.lorem.launch.Task
 import club.chachy.lorem.launch.manifest.VersionJsonProvider
-import club.chachy.lorem.utils.http.downloadAsync
+import club.chachy.lorem.utils.downloadAsync
 import kotlinx.coroutines.*
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.Logger

@@ -2,7 +2,7 @@ package club.chachy.lorem.launch.download
 
 import club.chachy.lorem.launch.Task
 import club.chachy.lorem.launch.manifest.ClientProperty
-import club.chachy.lorem.utils.http.downloadAsync
+import club.chachy.lorem.utils.downloadAsync
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File

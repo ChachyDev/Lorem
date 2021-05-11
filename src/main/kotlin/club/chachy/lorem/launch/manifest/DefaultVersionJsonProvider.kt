@@ -1,9 +1,7 @@
 package club.chachy.lorem.launch.manifest
 
-import club.chachy.auth.base.account.utils.gson
 import club.chachy.lorem.resolvers.fabric.FabricResolver
 import club.chachy.lorem.resolvers.forge.ForgeResolver
-import club.chachy.lorem.resolvers.resolvers
 import club.chachy.lorem.utils.getOrNull
 import club.chachy.lorem.utils.toBoolean
 import com.google.gson.JsonArray
@@ -14,6 +12,8 @@ import java.io.File
 /**
  * Open for interpretation.
  */
+
+private val resolvers = mutableMapOf("fabric" to FabricResolver, "forge" to ForgeResolver)
 
 class DefaultVersionJsonProvider(
     override val minimumLauncherVersion: Int,

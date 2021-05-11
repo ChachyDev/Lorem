@@ -24,9 +24,9 @@ object ForgeResolver : Resolver {
 
             return Library(
                 builtPath + File.separatorChar + jarName,
-                "",
-                0,
                 urlPath + "/${jarName}",
+                0,
+                null,
                 true,
                 isNative = false
             )
@@ -44,9 +44,9 @@ object ForgeResolver : Resolver {
 
         return Library(
             builtPath + File.separatorChar + jarName,
-            "",
-            0,
             urlPath + "/${jarName}",
+            0,
+            null,
             true,
             isNative = false
         )

@@ -1,4 +1,4 @@
-package club.chachy.lorem.utils.http
+package club.chachy.lorem.utils
 
 import io.ktor.client.*
 import io.ktor.client.engine.apache.*
@@ -23,14 +23,6 @@ suspend fun downloadAsync(url: URL, dest: File): Deferred<Long> {
                     it.copyTo(file)
                 }
             }
-        }
-    }
-}
-
-fun download(url: URL, dest: File) {
-    url.openStream().buffered().use {
-        dest.outputStream().use { file ->
-            it.copyTo(file)
         }
     }
 }
