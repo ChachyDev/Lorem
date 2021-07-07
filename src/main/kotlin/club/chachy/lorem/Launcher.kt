@@ -1,9 +1,11 @@
 package club.chachy.lorem
 
+import club.chachy.auth.base.account.AuthData
 import club.chachy.auth.base.account.AuthType
-import club.chachy.auth.base.account.AuthenticationData
 import club.chachy.auth.mojang.MojangAuthHandler
 import club.chachy.auth.ms.MicrosoftAuthHandler
+import club.chachy.auth.service.AuthenticationService
+import club.chachy.lorem.config.LauncherConfig
 import club.chachy.lorem.launch.download.DownloadAssetsTask
 import club.chachy.lorem.launch.download.DownloadClientTask
 import club.chachy.lorem.launch.download.DownloadLibrariesTask
@@ -15,52 +17,35 @@ import club.chachy.lorem.utils.toUUID
 import org.apache.logging.log4j.LogManager
 import java.io.File
 
-class Launcher(launcher: Launcher.() -> Unit) {
+class Launcher(private val config: LauncherConfig) {
     private val logger = LogManager.getLogger(this)
 
-    // Config values
-    var authType = AuthType.Mojang
-    var version = ""
-    var microsoftClientId = "365ddfea-60da-4095-a1a9-55802b143ac1"
-    var username: String? = null
-    var password: String? = null
-    var jvmArgs = arrayOf<String>()
-    var isSeparateMinecraftDirectoriesPerVersion = false
-    var launcherName: String? = null
-    var launcherVersion: String? = null
-    var isCustomClient = false
-    var closeHandlers: List<() -> Unit> = emptyList()
+    private var runDir = File(if (config.isSplitInstances) "lorem/${config.version}" else "lorem")
 
-    init {
-        apply(launcher)
-    }
+    private var authService = findAuthService(config.authType)
 
-    private var runDir = File(if (isSeparateMinecraftDirectoriesPerVersion) "lorem/$version" else "lorem")
-
-    private var authService =
-        if (authType == AuthType.Microsoft) MicrosoftAuthHandler(microsoftClientId) else MojangAuthHandler()
-
-    suspend fun begin() {
+    suspend fun launch() {
         logger.info("Preparing for launch")
         runDir.mkdir()
 
         logger.info("Logging in!")
         val authData =
             authService.executeTask(
-                AuthenticationData(
-                    username ?: error("Please specify a username..."),
-                    password,
-                    authType,
+                AuthData.AuthenticationData(
+                    config.username,
+                    config.password,
+                    config.authType,
                     runDir
                 )
             )
+
         logger.info("Nice you got your password correct! Username: ${authData.username}, UUID: ${authData.uuid}")
         logger.info("Preparing Game files...")
         logger.info("Fetching manifest...")
 
-        val manifest = findManifestTask(isCustomClient)
+        val manifest = findManifestTask(config.isCustomMinecraft)
 
-        if (!isCustomClient) {
+        if (!config.isCustomMinecraft) {
             logger.info("Downloading assets...")
             DownloadAssetsTask(runDir).execute(manifest)
 
@@ -76,27 +61,40 @@ class Launcher(launcher: Launcher.() -> Unit) {
             authData.username,
             authData.uuid.toUUID(),
             authData.token,
-            version,
+            config.version,
             runDir,
             File(runDir, "assets"),
             props = authData.props,
             nativesDirectory = File(runDir, "natives"),
-            launcherName = launcherName ?: "Lorem",
-            launcherVersion = launcherVersion ?: VERSION,
-            closeHandlers = closeHandlers
+            brand = config.launcherBrand,
+            closeHandlers = config.closeHandlers
         ).execute(manifest)
     }
 
-    companion object {
-        const val VERSION = "0.0.1"
+    private suspend fun findManifestTask(custom: Boolean): VersionJsonProvider {
+        return if (custom) {
+            CustomManifestTask(runDir, config.jvmArgs).execute(config.version)
+        } else {
+            ManifestTask(runDir, config.jvmArgs).execute(config.version)
+        }
     }
 
-    suspend fun findManifestTask(custom: Boolean): VersionJsonProvider {
-        return if (custom) {
-            CustomManifestTask(runDir, jvmArgs.toMutableList()).execute(version)
+    private fun findAuthService(authType: AuthType): AuthenticationService {
+        return if (authType == AuthType.Microsoft) {
+            MicrosoftAuthHandler(config.microsoftClientId ?: error("No Microsoft Client ID passed"))
         } else {
-            ManifestTask(runDir, jvmArgs.toMutableList()).execute(version)
+            MojangAuthHandler
         }
     }
 }
 
+suspend fun main() {
+    Launcher(
+        LauncherConfig(
+            AuthType.Mojang,
+            "1.8.9",
+            System.getProperty("lorem.username"),
+            System.getProperty("lorem.password")
+        )
+    ).launch()
+}

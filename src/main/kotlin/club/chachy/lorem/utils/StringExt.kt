@@ -1,14 +1,14 @@
 package club.chachy.lorem.utils
 
-import club.chachy.auth.base.account.Property
+import club.chachy.auth.base.account.AuthData
 import com.google.gson.Gson
 import java.io.File
 import java.util.*
 
 private val gson = Gson()
 
-
-fun String.replacePlaceholder(place: String, new: String) = replace("\${$place}", new).replace("{$place}", new)
+private fun String.replacePlaceholder(oldValue: String, newValue: String) =
+    replace("\${$oldValue}", newValue).replace("{$oldValue}", newValue)
 
 fun String.discoverValue(
     username: String,
@@ -18,7 +18,7 @@ fun String.discoverValue(
     gameDir: File,
     assets: File,
     userType: String,
-    props: List<Property>,
+    props: List<AuthData.Property>,
     assetsIndex: String,
     nativesDir: File,
     versionType: String,

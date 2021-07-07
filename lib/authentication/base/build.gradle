@@ -1,5 +1,5 @@
-group 'club.chachy'
-version '1.0-SNAPSHOT'
+group "club.chachy"
+version "1.0-SNAPSHOT"
 
 repositories {
     mavenCentral()
@@ -7,6 +7,8 @@ repositories {
 
 dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib"
-    api 'com.google.code.gson:gson:2.8.6'
+    api "com.google.code.gson:gson:2.8.7"
     api project(":lib:api:service")
+
+    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.5.0"
 }

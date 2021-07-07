@@ -1,6 +1,7 @@
 package club.chachy.lorem.launch.launch
 
-import club.chachy.auth.base.account.Property
+import club.chachy.auth.base.account.AuthData
+import club.chachy.lorem.config.LauncherConfig
 import club.chachy.lorem.launch.Task
 import club.chachy.lorem.launch.manifest.VersionJsonProvider
 import club.chachy.lorem.utils.discoverValue
@@ -29,11 +30,9 @@ class LaunchTask(
 
     private val nativesDirectory: File,
 
-    private val props: List<Property>,
+    private val props: List<AuthData.Property>,
 
-    private val launcherName: String,
-
-    private val launcherVersion: String,
+    private val brand: LauncherConfig.LauncherBrand,
 
     private val closeHandlers: List<() -> Unit>
 ) : Task<VersionJsonProvider, Unit> {
@@ -53,8 +52,8 @@ class LaunchTask(
                 data.assetsIndex.id,
                 nativesDirectory,
                 data.type,
-                launcherName,
-                launcherVersion
+                brand.name,
+                brand.version
             )
             args[args.indexOf(it)] = newValue
         }

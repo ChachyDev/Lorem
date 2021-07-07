@@ -1,6 +1,6 @@
 package club.chachy.yggdrasil.wrapper.data
 
-import club.chachy.auth.base.account.Property
+import club.chachy.auth.base.account.AuthData
 import com.google.gson.annotations.SerializedName
 
 data class YggdrasilAuthenticationRequest(
@@ -58,5 +58,5 @@ data class User(
     @SerializedName("migrated") val isMigrated: Boolean, // Don't use this, it will always return false, rather check if migratedFrom and migratedAt are not null
     @SerializedName("emailVerified") val isEmailVerified: Boolean,
     @SerializedName("legacyUser") val isLegacyUser: Boolean,
-    val properties: List<Property>
+    val properties: List<AuthData.Property>
 )

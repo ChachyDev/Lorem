@@ -1,6 +1,7 @@
 package club.chachy.yggdrasil.wrapper.data
 
-import club.chachy.auth.base.account.Property
+import club.chachy.auth.base.account.AuthData
+
 
 data class YggdrasilRefreshRequest(
     val accessToken: String,
@@ -18,5 +19,5 @@ data class YggdrasilRefreshResponse(
 
 data class RefreshUser(
     val id: String,
-    val properties: List<Property>
+    val properties: List<AuthData.Property>
 )
