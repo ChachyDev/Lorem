@@ -2,12 +2,12 @@ plugins {
     id "org.jetbrains.kotlin.jvm" version "1.5.10" apply false
 }
 
-group = "club.chachy"
-version = "0.1.1"
-
 allprojects {
     apply plugin: "maven-publish"
     apply plugin: "org.jetbrains.kotlin.jvm"
+
+    group = "club.chachy"
+    version = "0.1.1"
 
     repositories {
         mavenCentral()
@@ -30,7 +30,6 @@ allprojects {
 
                     developers {
                         developer {
-                            id = "lorem"
                             name = "ChachyDev"
                         }
                     }
