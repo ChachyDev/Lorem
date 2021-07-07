@@ -1,6 +1,6 @@
 # Lorem
 
-The next-generation Minecraft Launcher library.
+The next-generation Minecraft launching library built for the JVM.
 
 How do I use this?
 
