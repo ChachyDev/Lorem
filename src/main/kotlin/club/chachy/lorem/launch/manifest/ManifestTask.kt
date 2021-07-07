@@ -28,7 +28,7 @@ class ManifestTask(private val runDir: File, private val jvmArgs: MutableList<St
         val versionFile = File(versionFolder, version.id + ".json")
         val url = withContext(Dispatchers.IO) { URL(version.url) }
         val time = measureNanoTime { downloadAsync(url, versionFile).await() }
-        logger.info("Took ${time / 1000000.0}ms to download ${version.id} manifest.")
+        logger.info("Took ${time / 1000000}ms to download ${version.id} manifest.")
         val file = JsonParser.parseString(versionFile.readText()).asJsonObject
         return DefaultVersionJsonProvider(file["minimumLauncherVersion"].asInt, file, runDir, jvmArgs)
     }

@@ -13,7 +13,10 @@ import club.chachy.lorem.launch.launch.LaunchTask
 import club.chachy.lorem.launch.manifest.CustomManifestTask
 import club.chachy.lorem.launch.manifest.ManifestTask
 import club.chachy.lorem.launch.manifest.VersionJsonProvider
+import club.chachy.lorem.utils.launchCoroutine
 import club.chachy.lorem.utils.toUUID
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import org.apache.logging.log4j.LogManager
 import java.io.File
 
@@ -46,15 +49,27 @@ class Launcher(private val config: LauncherConfig) {
         val manifest = findManifestTask(config.isCustomMinecraft)
 
         if (!config.isCustomMinecraft) {
-            logger.info("Downloading assets...")
-            DownloadAssetsTask(runDir).execute(manifest)
-
-            logger.info("Downloading client...")
-            DownloadClientTask(runDir).execute(manifest.client to manifest.id)
+            launchCoroutine("Download Coroutine") {
+                listOf(
+                    async {
+                        logger.info("Downloading Libraries")
+                        DownloadLibrariesTask(runDir).execute(manifest)
+                    },
+                    async {
+                        logger.info("Downloading Assets")
+                        DownloadAssetsTask(runDir).execute(manifest)
+                    },
+                    async {
+                        logger.info("Downloading Client")
+                        DownloadClientTask(runDir).execute(manifest.client to manifest.id)
+                    }
+                ).awaitAll()
+            }.join()
+        } else {
+            DownloadLibrariesTask(runDir).execute(manifest)
         }
 
         logger.info("Downloading required libraries...")
-        DownloadLibrariesTask(runDir).execute(manifest)
         logger.info("The season finale has come, launch time!")
 
         LaunchTask(

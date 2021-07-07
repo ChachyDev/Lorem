@@ -10,7 +10,7 @@ data class LauncherConfig(
     var microsoftClientId: String? = null,
     var jvmArgs: MutableList<String> = mutableListOf(),
     var isSplitInstances: Boolean = false,
-    var launcherBrand: LauncherBrand = LauncherBrand("Lorem", "0.1.0"),
+    var launcherBrand: LauncherBrand = LauncherBrand("Lorem", "0.1.1"),
     var isCustomMinecraft: Boolean = false,
     var closeHandlers: List<() -> Unit> = emptyList()
 ) {
