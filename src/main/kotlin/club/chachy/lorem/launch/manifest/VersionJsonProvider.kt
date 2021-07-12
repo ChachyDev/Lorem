@@ -28,7 +28,9 @@ data class ClientProperty(val sha1: String, val size: Long, val url: String)
 
 data class Library(
     val path: String,
+    @Deprecated("Providing a SHA1 is now deprecated", level = DeprecationLevel.WARNING)
     val sha1: String,
+    @Deprecated("Providing a size is now deprecated", level = DeprecationLevel.WARNING)
     val size: Long = 0,
     val url: String?,
     val isAllowed: Boolean,
