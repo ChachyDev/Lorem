@@ -16,7 +16,7 @@ class DownloadLibrariesTask(
 ) : Task<VersionJsonProvider, Unit> {
     private val logger: Logger = LogManager.getLogger(this)
 
-    override suspend fun execute(data: VersionJsonProvider) {
+    override suspend fun executeTask(data: VersionJsonProvider) {
         val libraries = data.libraries
 
         coroutineScope {

@@ -20,7 +20,7 @@ class ManifestTask(private val runDir: File, private val jvmArgs: MutableList<St
     Task<String, VersionJsonProvider> {
     private val logger: Logger = LogManager.getLogger(this)
 
-    override suspend fun execute(data: String): VersionJsonProvider {
+    override suspend fun executeTask(data: String): VersionJsonProvider {
         val res = http.get<MojangManifestResponse>(MANIFEST_URL)
         val version = res.versions.find { it.id == data } ?: error("Failed to find version: $data")
         val versionFolder = File(File(runDir, "versions"), version.id)
