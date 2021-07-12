@@ -7,7 +7,7 @@ import java.io.File
 
 class CustomManifestTask(private val runDir: File, private val jvmArgs: MutableList<String>) :
     Task<String, VersionJsonProvider> {
-    override suspend fun execute(data: String): VersionJsonProvider {
+    override suspend fun executeTask(data: String): VersionJsonProvider {
         val jsonFile = File(runDir, "versions/$data/$data.json")
         if (!jsonFile.exists()) error("Failed to detect custom manifest's file")
 

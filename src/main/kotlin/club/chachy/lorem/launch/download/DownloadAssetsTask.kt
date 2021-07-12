@@ -14,7 +14,7 @@ import java.io.File
 import java.net.URL
 
 class DownloadAssetsTask(private val runDir: File) : Task<VersionJsonProvider, Unit> {
-    override suspend fun execute(data: VersionJsonProvider) {
+    override suspend fun executeTask(data: VersionJsonProvider) {
         // Make necessary directories
         val assetsFolder = File(runDir, "assets")
         val indexesFolder = File(assetsFolder, "indexes")

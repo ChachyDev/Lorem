@@ -35,7 +35,7 @@ class LaunchTask(
     private val javaPath: String
 ) : Task<VersionJsonProvider, Unit> {
     @Suppress("BlockingMethodInNonBlockingContext")
-    override suspend fun execute(data: VersionJsonProvider) {
+    override suspend fun executeTask(data: VersionJsonProvider) {
         val args = data.arguments.toMutableList()
         args.forEach {
             val newValue = it.discoverValue(

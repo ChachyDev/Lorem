@@ -1,10 +1,6 @@
 package club.chachy.lorem
 
 import club.chachy.auth.base.account.AuthData
-import club.chachy.auth.base.account.AuthType
-import club.chachy.auth.mojang.MojangAuthHandler
-import club.chachy.auth.ms.MicrosoftAuthHandler
-import club.chachy.auth.service.AuthenticationService
 import club.chachy.lorem.config.LauncherConfig
 import club.chachy.lorem.launch.download.DownloadAssetsTask
 import club.chachy.lorem.launch.download.DownloadClientTask
@@ -13,90 +9,107 @@ import club.chachy.lorem.launch.launch.LaunchTask
 import club.chachy.lorem.launch.manifest.CustomManifestTask
 import club.chachy.lorem.launch.manifest.ManifestTask
 import club.chachy.lorem.launch.manifest.VersionJsonProvider
+import club.chachy.lorem.progress.event.*
 import club.chachy.lorem.utils.launchCoroutine
 import club.chachy.lorem.utils.toUUID
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
-import org.apache.logging.log4j.LogManager
 
 class Launcher(private val config: LauncherConfig) {
-    private val logger = LogManager.getLogger(this)
-    
-    private var authService = findAuthService(config.authType)
-
     suspend fun launch() {
-        logger.info("Preparing for launch")
         config.runDir.mkdir()
 
-        logger.info("Logging in!")
+        if (config.monitor.onProgress(LoginEvent(config.authenticationService))) return
         val authData =
-            authService.executeTask(
+            config.authenticationService.executeTask(
                 AuthData.AuthenticationData(
                     config.username,
                     config.password,
-                    config.authType,
                     config.runDir
                 )
             )
 
-        logger.info("Nice you got your password correct! Username: ${authData.username}, UUID: ${authData.uuid}")
-        logger.info("Preparing Game files...")
-        logger.info("Fetching manifest...")
-
-        val manifest = findManifest(config.isCustomMinecraft)
+        val manifest = findManifest(config.isCustomMinecraft) ?: return
 
         if (!config.isCustomMinecraft) {
             launchCoroutine("Download Coroutine") {
                 listOf(
                     async {
-                        logger.info("Downloading Libraries")
-                        DownloadLibrariesTask(config.nativesDir, config.librariesDir).execute(manifest)
+                        with(DownloadLibrariesTask(config.nativesDir, config.librariesDir)) {
+                            if (config.monitor.onProgress(DownloadLibrariesEvent(this, manifest))) return@async
+                            executeTask(manifest)
+                        }
                     },
                     async {
-                        logger.info("Downloading Assets")
-                        DownloadAssetsTask(config.runDir).execute(manifest)
+                        with(DownloadAssetsTask(config.runDir)) {
+                            if (config.monitor.onProgress(DownloadAssetsEvent(this, manifest))) return@async
+                            executeTask(manifest)
+                        }
                     },
                     async {
-                        logger.info("Downloading Client")
-                        DownloadClientTask(config.runDir).execute(manifest.client to manifest.id)
+                        with(DownloadClientTask(config.runDir)) {
+                            val clientVersionPair = manifest.client to manifest.id
+
+                            if (config.monitor.onProgress(
+                                    DownloadClientEvent(
+                                        this,
+                                        clientVersionPair.first,
+                                        clientVersionPair.second
+                                    )
+                                )
+                            ) return@async
+                            executeTask(clientVersionPair)
+                        }
                     }
                 ).awaitAll()
             }.join()
         } else {
-            DownloadLibrariesTask(config.nativesDir, config.librariesDir).execute(manifest)
+            with(DownloadClientTask(config.runDir)) {
+                val clientVersionPair = manifest.client to manifest.id
+
+                if (config.monitor.onProgress(
+                        DownloadClientEvent(
+                            this,
+                            clientVersionPair.first,
+                            clientVersionPair.second
+                        )
+                    )
+                ) return
+                executeTask(clientVersionPair)
+            }
         }
 
-        logger.info("Downloading required libraries...")
-        logger.info("The season finale has come, launch time!")
-
-        LaunchTask(
-            authData.username,
-            authData.uuid.toUUID(),
-            authData.token,
-            config.version,
-            config.runDir,
-            config.assetsDir,
-            props = authData.props,
-            nativesDirectory = config.nativesDir,
-            brand = config.launcherBrand,
-            closeHandlers = config.closeHandlers,
-            javaPath = config.javaPath
-        ).execute(manifest)
+        with(
+            LaunchTask(
+                authData.username,
+                authData.uuid.toUUID(),
+                authData.token,
+                config.version,
+                config.runDir,
+                config.assetsDir,
+                props = authData.props,
+                nativesDirectory = config.nativesDir,
+                brand = config.launcherBrand,
+                closeHandlers = config.closeHandlers,
+                javaPath = config.javaPath
+            )
+        ) {
+            if (config.monitor.onProgress(LaunchEvent(this, config.version, config.nativesDir, config.assetsDir, config.javaPath, config.runDir))) return
+            executeTask(manifest)
+        }
     }
 
-    private suspend fun findManifest(custom: Boolean): VersionJsonProvider {
+    private suspend fun findManifest(custom: Boolean): VersionJsonProvider? {
         return if (custom) {
-            CustomManifestTask(config.runDir, config.jvmArgs).execute(config.version)
+            with(CustomManifestTask(config.runDir, config.jvmArgs)) {
+                if (config.monitor.onProgress(FindManifestEvent(this))) return null
+                executeTask(config.version)
+            }
         } else {
-            ManifestTask(config.runDir, config.jvmArgs).execute(config.version)
-        }
-    }
-
-    private fun findAuthService(authType: AuthType): AuthenticationService {
-        return if (authType == AuthType.Microsoft) {
-            MicrosoftAuthHandler(config.microsoftClientId ?: error("No Microsoft Client ID passed"))
-        } else {
-            MojangAuthHandler
+            with(ManifestTask(config.runDir, config.jvmArgs)) {
+                if (config.monitor.onProgress(FindManifestEvent(this))) return null
+                executeTask(config.version)
+            }
         }
     }
 }
@@ -104,8 +117,7 @@ class Launcher(private val config: LauncherConfig) {
 suspend fun main() {
     Launcher(
         LauncherConfig(
-            AuthType.Mojang,
-            "1.15",
+            "1.8.9",
             System.getProperty("lorem.username"),
             System.getProperty("lorem.password"),
             javaPath = "C:\\Program Files\\Java\\jdk-16.0.1\\bin\\java.exe"

@@ -9,7 +9,7 @@ import java.io.File
 import java.net.URL
 
 class DownloadClientTask(private val runDir: File) : Task<Pair<ClientProperty, String>, Unit> {
-    override suspend fun execute(data: Pair<ClientProperty, String>) {
+    override suspend fun executeTask(data: Pair<ClientProperty, String>) {
         val versionInfo = data.first
         val version = data.second
 
