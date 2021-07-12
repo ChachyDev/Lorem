@@ -1,7 +1,7 @@
 package club.chachy.auth.ms
 
 import club.chachy.auth.base.account.AuthData
-import club.chachy.auth.base.account.storage.StorageAccounts
+import club.chachy.auth.base.account.storage.AccountStorage
 import club.chachy.auth.ms.data.*
 import club.chachy.auth.ms.microsoft.CodeHandler
 import club.chachy.auth.ms.utils.MICROSOFT_OAUTH
@@ -69,9 +69,9 @@ class MicrosoftAuthHandler(private val clientId: String, private val port: Int =
 
             val authData = AuthData(mcAccessToken, profile.id, profile.name, mcAccessResponse.expiresIn, listOf())
 
-            with(readAccountStorage(data) ?: StorageAccounts(mutableListOf())) {
+            with(readAccountStorage(data)) {
                 addAccount(
-                    StorageAccounts.StorageAccount(
+                    AccountStorage.StorageAccount(
                         profile.name,
                         profile.id,
                         mcAccessToken,

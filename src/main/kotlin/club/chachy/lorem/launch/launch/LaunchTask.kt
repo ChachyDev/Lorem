@@ -5,10 +5,6 @@ import club.chachy.lorem.config.LauncherConfig
 import club.chachy.lorem.launch.Task
 import club.chachy.lorem.launch.manifest.VersionJsonProvider
 import club.chachy.lorem.utils.discoverValue
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.withContext
 import java.io.File
 import java.util.*
 import kotlin.concurrent.thread
@@ -34,7 +30,9 @@ class LaunchTask(
 
     private val brand: LauncherConfig.LauncherBrand,
 
-    private val closeHandlers: List<() -> Unit>
+    private val closeHandlers: List<() -> Unit>,
+
+    private val javaPath: String
 ) : Task<VersionJsonProvider, Unit> {
     @Suppress("BlockingMethodInNonBlockingContext")
     override suspend fun execute(data: VersionJsonProvider) {
@@ -58,7 +56,7 @@ class LaunchTask(
             args[args.indexOf(it)] = newValue
         }
 
-        val result = (arrayOf("java") + args.toTypedArray())
+        val result = (arrayOf(javaPath) + args.toTypedArray())
 
         val builder = ProcessBuilder()
             .command(*result)
@@ -66,11 +64,14 @@ class LaunchTask(
             .redirectErrorStream(true)
             .redirectOutput(ProcessBuilder.Redirect.INHERIT)
 
-        val process = withContext(Dispatchers.IO) { builder.start() }
-        Runtime.getRuntime().addShutdownHook(thread(false) { process.destroy() })
+        val process = builder.start()
+
+        Runtime.getRuntime().addShutdownHook(thread(false) {
+            File(gameDir, "natives/$version").deleteRecursively()
+            process.destroy()
+            closeHandlers.forEach { it.invoke() }
+        })
         process.waitFor()
-        coroutineScope { async { File(gameDir, "natives") } }.await()
-        closeHandlers.forEach { it.invoke() }
     }
 }
 

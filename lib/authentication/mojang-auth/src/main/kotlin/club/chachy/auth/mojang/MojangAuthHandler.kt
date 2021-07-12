@@ -1,7 +1,7 @@
 package club.chachy.auth.mojang
 
 import club.chachy.auth.base.account.AuthData
-import club.chachy.auth.base.account.storage.StorageAccounts
+import club.chachy.auth.base.account.storage.AccountStorage
 import club.chachy.auth.service.AuthenticationService
 import club.chachy.yggdrasil.wrapper.Yggdrasil
 import org.apache.logging.log4j.LogManager
@@ -14,7 +14,6 @@ object MojangAuthHandler : AuthenticationService {
 
     override suspend fun execute(data: AuthData.AuthenticationData): AuthData {
         return retrieveAuthData(data) { Yggdrasil.validate(token) } ?: let {
-
             logger.info("Authenticating with Mojang servers as your token is invalid...")
 
             val authenticate =
@@ -24,7 +23,7 @@ object MojangAuthHandler : AuthenticationService {
                     true
                 )
 
-            val account = StorageAccounts.StorageAccount(
+            val account = AccountStorage.StorageAccount(
                 authenticate.selectedProfile.name,
                 authenticate.selectedProfile.id,
                 authenticate.accessToken,
@@ -32,7 +31,7 @@ object MojangAuthHandler : AuthenticationService {
                 authenticate.user?.properties ?: listOf()
             )
 
-            with(readAccountStorage(data) ?: StorageAccounts(mutableListOf())) {
+            with(readAccountStorage(data)) {
                 addAccount(account)
                 saveStorage(data)
             }

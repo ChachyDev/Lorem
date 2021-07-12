@@ -1,6 +1,6 @@
 package club.chachy.auth.base.account
 
-import club.chachy.auth.base.account.storage.StorageAccounts.StorageAccount
+import club.chachy.auth.base.account.storage.AccountStorage.StorageAccount
 import java.io.File
 
 data class AuthData(

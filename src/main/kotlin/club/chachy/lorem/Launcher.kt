@@ -18,18 +18,15 @@ import club.chachy.lorem.utils.toUUID
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import org.apache.logging.log4j.LogManager
-import java.io.File
 
 class Launcher(private val config: LauncherConfig) {
     private val logger = LogManager.getLogger(this)
-
-    private var runDir = File(if (config.isSplitInstances) "lorem/${config.version}" else "lorem")
-
+    
     private var authService = findAuthService(config.authType)
 
     suspend fun launch() {
         logger.info("Preparing for launch")
-        runDir.mkdir()
+        config.runDir.mkdir()
 
         logger.info("Logging in!")
         val authData =
@@ -38,7 +35,7 @@ class Launcher(private val config: LauncherConfig) {
                     config.username,
                     config.password,
                     config.authType,
-                    runDir
+                    config.runDir
                 )
             )
 
@@ -46,27 +43,27 @@ class Launcher(private val config: LauncherConfig) {
         logger.info("Preparing Game files...")
         logger.info("Fetching manifest...")
 
-        val manifest = findManifestTask(config.isCustomMinecraft)
+        val manifest = findManifest(config.isCustomMinecraft)
 
         if (!config.isCustomMinecraft) {
             launchCoroutine("Download Coroutine") {
                 listOf(
                     async {
                         logger.info("Downloading Libraries")
-                        DownloadLibrariesTask(runDir).execute(manifest)
+                        DownloadLibrariesTask(config.nativesDir, config.librariesDir).execute(manifest)
                     },
                     async {
                         logger.info("Downloading Assets")
-                        DownloadAssetsTask(runDir).execute(manifest)
+                        DownloadAssetsTask(config.runDir).execute(manifest)
                     },
                     async {
                         logger.info("Downloading Client")
-                        DownloadClientTask(runDir).execute(manifest.client to manifest.id)
+                        DownloadClientTask(config.runDir).execute(manifest.client to manifest.id)
                     }
                 ).awaitAll()
             }.join()
         } else {
-            DownloadLibrariesTask(runDir).execute(manifest)
+            DownloadLibrariesTask(config.nativesDir, config.librariesDir).execute(manifest)
         }
 
         logger.info("Downloading required libraries...")
@@ -77,20 +74,21 @@ class Launcher(private val config: LauncherConfig) {
             authData.uuid.toUUID(),
             authData.token,
             config.version,
-            runDir,
-            File(runDir, "assets"),
+            config.runDir,
+            config.assetsDir,
             props = authData.props,
-            nativesDirectory = File(runDir, "natives"),
+            nativesDirectory = config.nativesDir,
             brand = config.launcherBrand,
-            closeHandlers = config.closeHandlers
+            closeHandlers = config.closeHandlers,
+            javaPath = config.javaPath
         ).execute(manifest)
     }
 
-    private suspend fun findManifestTask(custom: Boolean): VersionJsonProvider {
+    private suspend fun findManifest(custom: Boolean): VersionJsonProvider {
         return if (custom) {
-            CustomManifestTask(runDir, config.jvmArgs).execute(config.version)
+            CustomManifestTask(config.runDir, config.jvmArgs).execute(config.version)
         } else {
-            ManifestTask(runDir, config.jvmArgs).execute(config.version)
+            ManifestTask(config.runDir, config.jvmArgs).execute(config.version)
         }
     }
 
@@ -107,9 +105,10 @@ suspend fun main() {
     Launcher(
         LauncherConfig(
             AuthType.Mojang,
-            "1.8.9",
+            "1.15",
             System.getProperty("lorem.username"),
-            System.getProperty("lorem.password")
+            System.getProperty("lorem.password"),
+            javaPath = "C:\\Program Files\\Java\\jdk-16.0.1\\bin\\java.exe"
         )
     ).launch()
 }

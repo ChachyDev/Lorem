@@ -10,7 +10,10 @@ import java.io.File
 import java.net.URL
 import kotlin.system.measureNanoTime
 
-class DownloadLibrariesTask(private val runDir: File) : Task<VersionJsonProvider, Unit> {
+class DownloadLibrariesTask(
+    private val nativesDir: File,
+    private val librariesDir: File
+) : Task<VersionJsonProvider, Unit> {
     private val logger: Logger = LogManager.getLogger(this)
 
     override suspend fun execute(data: VersionJsonProvider) {
@@ -21,7 +24,7 @@ class DownloadLibrariesTask(private val runDir: File) : Task<VersionJsonProvider
             val downloads = libraries.map {
                 async {
                     // Get the path for the file depending on if it's a native or a library
-                    val path = File(File(runDir, if (it.isNative) "natives" else "libraries"), it.path)
+                    val path = File(if (it.isNative) nativesDir else librariesDir, it.path)
                     path.parentFile.mkdirs()
 
                     withContext(Dispatchers.IO) {
@@ -38,8 +41,8 @@ class DownloadLibrariesTask(private val runDir: File) : Task<VersionJsonProvider
             // Extract natives
             val natives = libraries.filter { it.isNative }.map {
                 async {
-                    val nativePath = File(File(runDir, "natives"), it.path)
-                    Extractor.unzipAsync(nativePath.absolutePath, File(runDir, "natives").absolutePath)
+                    val nativePath = File(nativesDir, it.path)
+                    Extractor.unzipAsync(nativePath.absolutePath, nativesDir.absolutePath)
                 }
             }
 

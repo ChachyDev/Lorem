@@ -1,9 +1,9 @@
 package club.chachy.auth.service
 
 import club.chachy.auth.base.account.AuthData
-import club.chachy.auth.base.account.storage.StorageAccounts
+import club.chachy.auth.base.account.storage.AccountStorage
+import club.chachy.auth.base.account.utils.fromJson
 import club.chachy.auth.base.account.utils.gson
-import club.chachy.auth.base.account.utils.readAccountStorage
 import club.chachy.lorem.services.Service
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -27,13 +27,13 @@ interface AuthenticationService : Service<AuthData.AuthenticationData, AuthData>
 
     suspend fun retrieveAuthData(
         data: AuthData.AuthenticationData,
-        validate: suspend StorageAccounts.StorageAccount.() -> Boolean
+        validate: suspend AccountStorage.StorageAccount.() -> Boolean
     ): AuthData? {
         val text = File(data.launchDir, "storage/accounts/account.json").takeIf { it.exists() }?.readText()
 
         if (!text.isNullOrEmpty()) {
             println("Attempting to log in from saved session")
-            val storage = readAccountStorage(text)
+            val storage = text.fromJson<AccountStorage>()
             val acc = storage.accounts.find { it.username == data.username || it.uuid == data.username }
             if (acc != null) {
                 // Quickly validate the token
@@ -47,18 +47,20 @@ interface AuthenticationService : Service<AuthData.AuthenticationData, AuthData>
         return null
     }
 
-    fun readAccountStorage(data: AuthData.AuthenticationData): StorageAccounts? {
-        return readAccountStorage(
-            accountJson?.takeIf { it.exists() }?.readText() ?: return null
-        )
+    fun readAccountStorage(data: AuthData.AuthenticationData): AccountStorage {
+        return accountJson?.takeIf { it.exists() }?.readText()?.fromJson<AccountStorage>() ?: createAccountStorage()
     }
 
-    fun StorageAccounts.saveStorage(data: AuthData.AuthenticationData) {
+    fun createAccountStorage(): AccountStorage {
+        return AccountStorage(mutableListOf())
+    }
+
+    fun AccountStorage.saveStorage(data: AuthData.AuthenticationData) {
         val file = accountJson?.takeIf { it.exists() } ?: return
         file.writeText(gson.toJson(this))
     }
 
-    fun StorageAccounts.addAccount(account: StorageAccounts.StorageAccount) {
+    fun AccountStorage.addAccount(account: AccountStorage.StorageAccount) {
         accounts.removeIf { it.uuid == account.uuid }
         accounts.add(account)
     }
